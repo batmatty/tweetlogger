@@ -7,15 +7,23 @@
 
 var Twit = require('twit')
   , util = require('util')
-  , EventEmitter = require('events').EventEmitter;
+  , mysql = require('mysql')
+  , moment = require('moment')
+  , EventEmitter = require('events').EventEmitter
+  , connection = mysql.createConnection({
+        host     : 'localhost',
+        database : 'test',
+        user     : 'matt',
+        password : ''
+    });
 
 /*
  * Twitterlogger Constructer 
  */
 
 var Twitterlogger = function(config, username) { 
-	this.twit = new Twit(config.access_config);
-  	this.username = username.slice(1, username.length);
+    this.twit = new Twit(config.access_config);
+    this.username = username.slice(1, username.length);
   	this.sinceId = 12345; //reset on first data from the api
   	this.maxId = 12345; // reset on first data from the api
   	this.lastTweets = [];
@@ -41,7 +49,7 @@ Twitterlogger.prototype.updateTweets = function () {
 	if(this.requestCount === 0){
 		params = {
 			'screen_name' : self.username, 
-			'trim_user' : true,
+			'trim_user' : false,
 			'count' : 2	//change this in the production version
 		};
 	} else {
@@ -49,7 +57,7 @@ Twitterlogger.prototype.updateTweets = function () {
 			'screen_name' : self.username,
 			'since_id' : self.sinceId, 
 			'max_id' : self.maxId,
-			'trim_user' : true,
+			'trim_user' : false,
 			'count' : 2	//change this in the production version
 		};
 	}
@@ -74,6 +82,24 @@ Twitterlogger.prototype.checkRateLimit = function(callback){
       	if(err) {return callback(err)}
     	callback(reply);
 	});
+} 
+
+Twitterlogger.prototype.log = function(tweets){
+    for(var i = 0; i < tweets.length; i++){
+        var tweet  = tweets[i];
+        var fdate = moment.utc(tweet.created_at, 'ddd MMM DD HH:mm:ss Z YYYY');
+        var query = 'INSERT INTO tweets ' +
+                    '(tweet_id, username, date, tweet)' +
+                    ' VALUES (' + tweet.id + ', ' 
+                                + '\'' + tweet.user.name + '\','
+                                + '\'' + fdate.format() + '\','
+                                + '\'' + tweet.text + '\')';
+        console.log(query);
+        connection.query(query, function(err, result) {
+            console.log('Result: ' +  result);
+            console.log('Error: ' + err);
+        });
+    }
 }
 
 module.exports = Twitterlogger;

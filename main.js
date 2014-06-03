@@ -18,6 +18,7 @@ tg.on('updated', function(sinceId, maxId, lastTweets){
 	for (var i = 0; i < lastTweets.length; i++){
 		util.log('ID: ' + lastTweets[i].id + ' Tweet: ' + lastTweets[i].text);
 	}
+	tg.log(lastTweets);
 });
 
 
