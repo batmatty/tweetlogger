@@ -9,6 +9,7 @@ var Twit = require('twit')
   , util = require('util')
   , mysql = require('mysql')
   , moment = require('moment')
+  , twitterutils = require('./twitterutils')
   , EventEmitter = require('events').EventEmitter
   , connection = mysql.createConnection({
         host     : 'localhost',
@@ -24,11 +25,11 @@ var Twit = require('twit')
 var Twitterlogger = function(config, username) { 
     this.twit = new Twit(config.access_config);
     this.username = username.slice(1, username.length);
-  	this.sinceId = 12345; //reset on first data from the api
-  	this.maxId = 12345; // reset on first data from the api
+  	this.maxId = null; // reset on first data from the api
   	this.lastTweets = [];
-  	this.requestCount = 0;
   	this.untilDate = new Date(2013, 01, 01);
+    this.maxIdInit = false;
+    this.setMaxId()
 };
 
 /*
@@ -46,19 +47,18 @@ Twitterlogger.prototype.updateTweets = function () {
 	var self = this;
 	var params = {};
 
-	if(this.requestCount === 0){
-		params = {
+	if(this.maxId === null){
+    params = {
 			'screen_name' : self.username, 
 			'trim_user' : false,
-			'count' : 2	//change this in the production version
+			'count' : 1	//change this in the production version
 		};
 	} else {
 		params = {
 			'screen_name' : self.username,
-			'since_id' : self.sinceId, 
 			'max_id' : self.maxId,
 			'trim_user' : false,
-			'count' : 2	//change this in the production version
+			'count' : 1	//change this in the production version
 		};
 	}
  	this.twit.get('statuses/user_timeline', params, function(err, reply) {
@@ -66,13 +66,12 @@ Twitterlogger.prototype.updateTweets = function () {
       		console.log(err);
       		return; 
       	}
-      	self.requestCount += 1; 
       	if (reply.length !== 0){  // if reply is empty, there are no new tweets
-      		self.maxId = reply[0].id;
-      		self.sinceId = reply[reply.length-1].id;	
+      		self.maxId = twitterutils.decStrNum(reply[reply.length-1].id_str); // javascript can't handle large number - use string	
       		self.lastTweets = reply;
       	}
-      	self.emit("updated", self.sinceId, self.maxId, self.lastTweets)
+        console.log('Reply : ' + reply);
+      	self.emit("updated", self.lastTweets)
 	});
 
 }
@@ -85,21 +84,38 @@ Twitterlogger.prototype.checkRateLimit = function(callback){
 } 
 
 Twitterlogger.prototype.log = function(tweets){
-    for(var i = 0; i < tweets.length; i++){
+    if (tweets !== null){
+      for(var i = 0; i < tweets.length; i++){
         var tweet  = tweets[i];
         var fdate = moment.utc(tweet.created_at, 'ddd MMM DD HH:mm:ss Z YYYY');
         var query = 'INSERT INTO tweets ' +
                     '(tweet_id, username, date, tweet)' +
                     ' VALUES (' + tweet.id + ', ' 
-                                + '\'' + tweet.user.name + '\','
+                                + connection.escape(tweet.user.name) + ','
                                 + '\'' + fdate.format() + '\','
-                                + '\'' + tweet.text + '\')';
-        console.log(query);
+                                + connection.escape(tweet.text) + ')';
         connection.query(query, function(err, result) {
             console.log('Result: ' +  result);
-            console.log('Error: ' + err);
+            console.log('log Error: ' + err);
         });
+      }
     }
+}
+
+Twitterlogger.prototype.setMaxId = function(){
+    var self = this;
+    query = 'SELECT tweet_id from tweets ORDER BY tweet_id ASC LIMIT 1';
+    connection.query(query, function(err, result){
+        if (result.length !== 0){
+          self.maxId = twitterutils.decStrNum(result[0].tweet_id);
+          //console.log('getMaxId RESULT :' + result[0].tweet_id);
+          //console.log('getMaxId ERROR : '+ err);
+        } else {
+          self.maxId = null;
+        }
+        self.emit('maxIdInitialised');
+    });
+  
 }
 
 module.exports = Twitterlogger;

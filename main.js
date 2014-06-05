@@ -8,16 +8,19 @@ var tg = new Twitterlogger(config, '@inflatethecow');
 util.log('Twitterlogger: Running...');
 
 setInterval(function(){
-	tg.updateTweets();
+	if(tg.maxIdInit){
+		tg.updateTweets();
+	}
 }, 10000);
 
-tg.on('updated', function(sinceId, maxId, lastTweets){
-	util.log('The MaxId is: ' + maxId);
-	util.log('The sinceId is: ' + sinceId);
+tg.on('maxIdInitialised', function(){
+	util.log('maxId Initialised from database!');
+	tg.maxIdInit = true;
+});
+
+tg.on('updated', function(lastTweets){
+	util.log('The MaxId is: ' + this.maxId);
 	util.log('Size of the last received tweets : '+ lastTweets.length);
-	for (var i = 0; i < lastTweets.length; i++){
-		util.log('ID: ' + lastTweets[i].id + ' Tweet: ' + lastTweets[i].text);
-	}
 	tg.log(lastTweets);
 });
 
