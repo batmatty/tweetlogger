@@ -5,13 +5,23 @@
  * 
  */
 
+/*
+ * Require statements
+ */
+
 var Twit = require('twit')
   , util = require('util')
   , mysql = require('mysql')
   , moment = require('moment')
   , twitterutils = require('./twitterutils')
-  , EventEmitter = require('events').EventEmitter
-  , connection = mysql.createConnection({
+  , EventEmitter = require('events').EventEmitter;
+
+/*
+ * Database connection information 
+ *
+ */
+
+var connection = mysql.createConnection({
         host     : 'localhost',
         database : 'test',
         user     : 'matt',
@@ -25,6 +35,13 @@ var Twit = require('twit')
  */
 
 var Twitterlogger = function(config, username) { 
+
+    //Constants
+
+    this.COUNT = 200; //Change this to tune performance
+
+    //Twitterlogger Class variables    
+
     this.twit = new Twit(config.access_config);
     this.username = username.slice(1, username.length);
   	this.maxId = null; // reset on first data from the api
@@ -52,14 +69,14 @@ Twitterlogger.prototype.updateTweets = function () {
     params = {
 			'screen_name' : self.username, 
 			'trim_user' : false,
-			'count' : 200	//change this in the production version
+			'count' : self.COUNT
 		};
 	} else {
 		params = {
 			'screen_name' : self.username,
 			'max_id' : self.maxId,
 			'trim_user' : false,
-			'count' : 200	//change this in the production version
+			'count' : self.COUNT
 		};
 	}
   console.log(params);
@@ -68,7 +85,7 @@ Twitterlogger.prototype.updateTweets = function () {
       		console.log('NODE TWITTER MODULE ERROR: ' + err);
       		return; 
       	}
-      	if (reply.length !== 0){  // if reply is empty, there are no new tweets
+      	if (reply.length !== 0){  // Check if the reply is empty, i.e. there are no tweets
       		self.maxId = twitterutils.decStrNum(reply[reply.length-1].id_str); // javascript can't handle large number - use string	
       	}
       	self.emit("updated", reply);

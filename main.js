@@ -26,8 +26,3 @@ tg.on('updated', function(lastTweets){
 	}
 	tg.log(lastTweets);
 });
-
-
-//tg.getLastTweetIds(function(lastTweetIDs){
-//	console.log(lastTweetIDs);
-//})
