@@ -15,6 +15,8 @@ var Twit = require('twit')
         host     : 'localhost',
         database : 'test',
         user     : 'matt',
+        supportBigNumbers : true,
+        bigNumberStrings : true, 
         password : ''
     });
 
@@ -26,7 +28,6 @@ var Twitterlogger = function(config, username) {
     this.twit = new Twit(config.access_config);
     this.username = username.slice(1, username.length);
   	this.maxId = null; // reset on first data from the api
-  	this.lastTweets = [];
   	this.untilDate = new Date(2013, 01, 01);
     this.maxIdInit = false;
     this.setMaxId()
@@ -51,27 +52,26 @@ Twitterlogger.prototype.updateTweets = function () {
     params = {
 			'screen_name' : self.username, 
 			'trim_user' : false,
-			'count' : 1	//change this in the production version
+			'count' : 200	//change this in the production version
 		};
 	} else {
 		params = {
 			'screen_name' : self.username,
 			'max_id' : self.maxId,
 			'trim_user' : false,
-			'count' : 1	//change this in the production version
+			'count' : 200	//change this in the production version
 		};
 	}
+  console.log(params);
  	this.twit.get('statuses/user_timeline', params, function(err, reply) {
       	if(err) { 
-      		console.log(err);
+      		console.log('NODE TWITTER MODULE ERROR: ' + err);
       		return; 
       	}
       	if (reply.length !== 0){  // if reply is empty, there are no new tweets
       		self.maxId = twitterutils.decStrNum(reply[reply.length-1].id_str); // javascript can't handle large number - use string	
-      		self.lastTweets = reply;
       	}
-        console.log('Reply : ' + reply);
-      	self.emit("updated", self.lastTweets)
+      	self.emit("updated", reply);
 	});
 
 }
@@ -90,13 +90,13 @@ Twitterlogger.prototype.log = function(tweets){
         var fdate = moment.utc(tweet.created_at, 'ddd MMM DD HH:mm:ss Z YYYY');
         var query = 'INSERT INTO tweets ' +
                     '(tweet_id, username, date, tweet)' +
-                    ' VALUES (' + tweet.id + ', ' 
+                    ' VALUES (' + tweet.id_str + ', ' 
                                 + connection.escape(tweet.user.name) + ','
                                 + '\'' + fdate.format() + '\','
                                 + connection.escape(tweet.text) + ')';
         connection.query(query, function(err, result) {
-            console.log('Result: ' +  result);
-            console.log('log Error: ' + err);
+            //console.log('Result: ' +  result);
+            //console.log('log Error: ' + err);
         });
       }
     }
