@@ -1,8 +1,6 @@
 /*
- * Twitterlogger is a utilty which monitors and logs the tweets from a 
- * selected list of followers and produces a csv file of all the 
- * tweets and the times -> UPDATE THIS!!
- * 
+ * Twitterlogger is a utility which downloads all the tweets from
+ * a given users timeline and saves them to a SQL database.  
  */
 
 /*
@@ -18,7 +16,6 @@ var Twit = require('twit')
 
 /*
  * Database connection information 
- *
  */
 
 var connection = mysql.createConnection({
@@ -38,15 +35,19 @@ var Twitterlogger = function(config, username) {
 
     //Constants
 
-    this.COUNT = 200; //Change this to tune performance
+    //Change count to change the number of results returned
+    //from the Twitter API.
+    this.COUNT = 200; 
 
     //Twitterlogger Class variables    
-
     this.twit = new Twit(config.access_config);
     this.username = username.slice(1, username.length);
   	this.maxId = null; // reset on first data from the api
   	this.untilDate = new Date(2013, 01, 01);
     this.maxIdInit = false;
+    this.callRate = 5000;
+    
+    //Initiliase the max_id variable for the API call.
     this.setMaxId()
 };
 
@@ -82,7 +83,7 @@ Twitterlogger.prototype.updateTweets = function () {
   console.log(params);
  	this.twit.get('statuses/user_timeline', params, function(err, reply) {
       	if(err) { 
-      		console.log('NODE TWITTER MODULE ERROR: ' + err);
+      		console.log('TWITTER MODULE ERROR: ' + err);
       		return; 
       	}
       	if (reply.length !== 0){  // Check if the reply is empty, i.e. there are no tweets
@@ -93,11 +94,24 @@ Twitterlogger.prototype.updateTweets = function () {
 
 }
 
-Twitterlogger.prototype.checkRateLimit = function(callback){
-	this.twit.get('application/rate_limit_status', {}, function(err, reply) {
-      	if(err) {return callback(err)}
-    	callback(reply);
-	});
+Twitterlogger.prototype.checkRateLimit = function(){
+    var self = this;
+    params = {
+      'resources' : 'statuses'
+    };
+    this.twit.get('application/rate_limit_status', params, function(err, reply) {
+        if(err) {
+            console.log('TWITTER MODULE ERROR in .checkRateLimit : ' + err);  
+        };
+        limit = reply.resources.statuses['/statuses/user_timeline'].limit;
+        left = reply.resources.statuses['/statuses/user_timeline'].remaining;
+        reset = reply.resources.statuses['/statuses/user_timeline'].reset;
+    	  //resetTime is the time from now to the next rate reset in milliseconds
+        resetTime = moment().diff(moment.unix(reset));
+        self.callRate = Math.abs(resetTime/left);
+        console.log('left :' + left);
+        console.log('resetTime : ' + resetTime);
+	  });
 } 
 
 Twitterlogger.prototype.log = function(tweets){
@@ -112,8 +126,9 @@ Twitterlogger.prototype.log = function(tweets){
                                 + '\'' + fdate.format() + '\','
                                 + connection.escape(tweet.text) + ')';
         connection.query(query, function(err, result) {
-            //console.log('Result: ' +  result);
-            //console.log('log Error: ' + err);
+            if (err){
+                console.log('MYSQL ERROR in .log: ' + err);  
+            }
         });
       }
     }
@@ -124,9 +139,9 @@ Twitterlogger.prototype.setMaxId = function(){
     query = 'SELECT tweet_id from tweets ORDER BY tweet_id ASC LIMIT 1';
     connection.query(query, function(err, result){
         if (result.length !== 0){
-          self.maxId = twitterutils.decStrNum(result[0].tweet_id);
-          //console.log('getMaxId RESULT :' + result[0].tweet_id);
-          //console.log('getMaxId ERROR : '+ err);
+            self.maxId = twitterutils.decStrNum(result[0].tweet_id);
+        } else if (err) {
+            console.log('MYSQL ERROR in .setMaxID: ' + err);
         } else {
           self.maxId = null;
         }

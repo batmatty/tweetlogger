@@ -3,7 +3,7 @@ var util = require('util');
 var Twitterlogger = require('./twitterlogger')
   , config = require('./config');
 
-var tg = new Twitterlogger(config, '@inflatethecow');
+var tg = new Twitterlogger(config, '@batmatty');
 
 util.log('Twitterlogger: Running...');
 
@@ -21,8 +21,8 @@ tg.on('maxIdInitialised', function(){
 tg.on('updated', function(lastTweets){
 	util.log('The MaxId is: ' + this.maxId);
 	util.log('Size of the last received tweets : '+ lastTweets.length);
-	for (i = 0; i< lastTweets.length; i++){
-		console.log('Last received tweets : '+ lastTweets[i].text);
-	}
+	//for (i = 0; i< lastTweets.length; i++){
+	//	console.log('Last received tweets : '+ lastTweets[i].text);
+	//}
 	tg.log(lastTweets);
 });
