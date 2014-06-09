@@ -1,0 +1,16 @@
+To do still:
+
+1. write an initialisation script for the mysql database.
+
+
+NOTES:
+
+
+NODE TWITTER MODULE ERROR: Error: Rate limit exceeded
+{ [Error: Rate limit exceeded]
+  message: 'Rate limit exceeded',
+  statusCode: 429,
+  code: 88,
+  allErrors: [ { message: 'Rate limit exceeded', code: 88 } ],
+  twitterReply: '{"errors":[{"message":"Rate limit exceeded","code":88}]}' }
+
