@@ -1,28 +1,32 @@
 var util = require('util');
 
-var Twitterlogger = require('./twitterlogger')
+var loggerfactory = require('./loggerfactory')
   , config = require('./config');
 
-var tg = new Twitterlogger(config, '@batmatty');
+var loggers = [];
 
 util.log('Twitterlogger: Running...');
 
-setInterval(function(){
-	if(tg.maxIdInit){
-		tg.updateTweets();
+for (i = 0; i<config.usernames.length; i++){
+	
+	loggers.push(loggerfactory(config, config.usernames[i]));
+
+	if (loggers[i]){
+		loggers[i].on('maxIdInitialised', function(){
+			util.log(this.username + ': maxId Initialised from database!');
+			this.maxIdInit = true;
+		});
+
+		loggers[i].on('updated', function(lastTweets){
+			util.log(this.username +': The MaxId is: ' + this.maxId);
+			util.log(this.username +': Size of the last received tweets : '+ lastTweets.length);
+			this.log(lastTweets);
+		});
 	}
-}, 10000);
 
-tg.on('maxIdInitialised', function(){
-	util.log('maxId Initialised from database!');
-	tg.maxIdInit = true;
-});
-
-tg.on('updated', function(lastTweets){
-	util.log('The MaxId is: ' + this.maxId);
-	util.log('Size of the last received tweets : '+ lastTweets.length);
-	//for (i = 0; i< lastTweets.length; i++){
-	//	console.log('Last received tweets : '+ lastTweets[i].text);
-	//}
-	tg.log(lastTweets);
-});
+	setInterval(function(logger){
+		if(logger.maxIdInit){
+			logger.updateTweets();
+		}
+	}, 10000, loggers[i]);
+}

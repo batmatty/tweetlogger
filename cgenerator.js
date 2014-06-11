@@ -14,14 +14,22 @@ var fs = require('fs'),
 var CONFIGFILE = './config.txt'
 
 var config = {
-	'access_config' : {
-       'consumer_key' : '',
-	   'consumer_secret' : '',
-	   'access_token' : '',
-	   'access_token_secret' : ''
+    db_config : {
+        host : '',
+        user : '',
+        password : '',
+        database : '',
+        supportBigNumbers : true,
+        bigNumberStrings : true,
     },
-    'usernames' : [],
-    'hashtags' : []
+	access_config : {
+       consumer_key : '',
+	   consumer_secret : '',
+	   access_token : '',
+	   access_token_secret : ''
+    },
+    usernames : [],
+    hashtags : []
 }
 
 var instream = fs.createReadStream(CONFIGFILE);
@@ -61,10 +69,26 @@ rl.on('line', function(line) {
         				break;
         		}
         		break;
-        	case ('@'): config.usernames.push(line.slice(0, line.length));
+        	case ('@'): config.usernames.push(line.slice(1, line.length));
         				break;
         	case ('#'): config.hashtags.push(line.slice(0, line.length));
         				break;
+            case ('&'): 
+                switch (line.slice(1, line.indexOf('=')).toUpperCase())
+                {
+                    case ('HOSTNAME'):
+                        config.db_config.host = line.slice(line.indexOf('=')+1, line.length);
+                        break;
+                    case ('USERNAME'):
+                        config.db_config.user = line.slice(line.indexOf('=')+1, line.length);
+                        break;
+                    case ('PASSWORD'):
+                        config.db_config.password = line.slice(line.indexOf('=')+1, line.length);
+                        break;
+                    case ('DATABASE'):
+                        config.db_config.database = line.slice(line.indexOf('=')+1, line.length);
+                        break;
+                }
         }
     }
 });

@@ -12,26 +12,20 @@ var Twit = require('twit')
   , mysql = require('mysql')
   , moment = require('moment')
   , twitterutils = require('./twitterutils')
+  , config = require('./config')
   , EventEmitter = require('events').EventEmitter;
 
 /*
  * Database connection information 
  */
 
-var connection = mysql.createConnection({
-        host     : 'localhost',
-        database : 'test',
-        user     : 'matt',
-        supportBigNumbers : true,
-        bigNumberStrings : true, 
-        password : ''
-    });
+var connection = mysql.createConnection(config.db_config);
 
 /*
  * Twitterlogger Constructer 
  */
 
-var Twitterlogger = function(config, username) { 
+function Twitterlogger (username) { 
 
     //Constants
 
@@ -41,14 +35,16 @@ var Twitterlogger = function(config, username) {
 
     //Twitterlogger Class variables    
     this.twit = new Twit(config.access_config);
-    this.username = username.slice(1, username.length);
+    this.username = username;
   	this.maxId = null; // reset on first data from the api
-  	this.untilDate = new Date(2013, 01, 01);
-    this.maxIdInit = false;
+  	//this.untilDate = new Date(2013, 01, 01);
     this.callRate = 5000;
+
+    //Initialisation variables
+    this.maxIdInit = false;
     
     //Initiliase the max_id variable for the API call.
-    this.setMaxId()
+    this.setMaxId();
 };
 
 /*
@@ -80,7 +76,6 @@ Twitterlogger.prototype.updateTweets = function () {
 			'count' : self.COUNT
 		};
 	}
-  console.log(params);
  	this.twit.get('statuses/user_timeline', params, function(err, reply) {
       	if(err) { 
       		console.log('TWITTER MODULE ERROR: ' + err);
@@ -119,7 +114,7 @@ Twitterlogger.prototype.log = function(tweets){
       for(var i = 0; i < tweets.length; i++){
         var tweet  = tweets[i];
         var fdate = moment.utc(tweet.created_at, 'ddd MMM DD HH:mm:ss Z YYYY');
-        var query = 'INSERT INTO tweets ' +
+        var query = 'INSERT INTO '+this.username+
                     '(tweet_id, username, date, tweet)' +
                     ' VALUES (' + tweet.id_str + ', ' 
                                 + connection.escape(tweet.user.name) + ','
@@ -136,12 +131,12 @@ Twitterlogger.prototype.log = function(tweets){
 
 Twitterlogger.prototype.setMaxId = function(){
     var self = this;
-    query = 'SELECT tweet_id from tweets ORDER BY tweet_id ASC LIMIT 1';
+    query = 'SELECT tweet_id from ' + self.username + ' ORDER BY tweet_id ASC LIMIT 1';
     connection.query(query, function(err, result){
-        if (result.length !== 0){
-            self.maxId = twitterutils.decStrNum(result[0].tweet_id);
-        } else if (err) {
+        if (err){
             console.log('MYSQL ERROR in .setMaxID: ' + err);
+        } else if (result.length !== 0) {
+            self.maxId = twitterutils.decStrNum(result[0].tweet_id);
         } else {
           self.maxId = null;
         }
@@ -149,5 +144,5 @@ Twitterlogger.prototype.setMaxId = function(){
     });
   
 }
-
+    
 module.exports = Twitterlogger;

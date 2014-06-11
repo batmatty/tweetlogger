@@ -11,6 +11,15 @@ $CONSUMER_SECRET = zRqFyI3U2tTh2qwOx3ieWEo4S3TA5CYAolYStwr0fc0
 $ACCESS_TOKEN = 2415176682-eu8MK9BKiz0AdT7BEMXjHzgj7IHXBmvJKcAVhFe
 $ACCESS_TOKEN_SECRET = J2Bu5Oa4iHnlskx9N7jh04MXpGUrrgsJtr8Q1MTLcKBAI
 
+*
+* MySQL Database Access Credentials
+*
+
+&HOSTNAME = localhost
+&USERNAME = tweetget
+&PASSWORD = abc123
+&DATABASE = tweetget
+
 * 
 * List of Followers to monitor - each username should go on a new line
 *
