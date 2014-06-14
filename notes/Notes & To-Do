@@ -1,6 +1,7 @@
 To do still:
 
-1. write an initialisation script for the mysql database.
+1. Add command line arguments for initiliase and update and purge
+2. Add the rate limit functionality
 
 
 NOTES:
