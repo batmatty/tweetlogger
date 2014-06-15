@@ -1,8 +1,8 @@
-var Twitterlogger = require('./twitterlogger')
-	, config = require('./config')
+var Twitterlogger = require('../twitterlogger')
+	, config = require('../config')
 	, moment = require('moment');
 
-var tg = new Twitterlogger(config, '@inflatethecow');
+var tg = new Twitterlogger('inflatethecow');
 
 tg.checkRateLimit(function(limit, left, reset){
 	console.log('limit: ' + limit);
@@ -11,4 +11,4 @@ tg.checkRateLimit(function(limit, left, reset){
 	console.log('reset / left : ' + reset/left);
 });
 
-
+tg.closeDb();
