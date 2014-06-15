@@ -23,10 +23,10 @@ $ACCESS_TOKEN_SECRET = J2Bu5Oa4iHnlskx9N7jh04MXpGUrrgsJtr8Q1MTLcKBAI
 * 
 * List of Followers to monitor - each username should go on a new line
 *
-
-@Batmatty
-@SHAQ
-@BillSimmons
+@inflatethecow
+*@Batmatty
+*@SHAQ
+*@BillSimmons
 
 *
 * Hashtags to monitor - each hashtag should go on a new line

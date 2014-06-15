@@ -33,12 +33,12 @@ function Twitterlogger (username) {
     //from the Twitter API.
     this.COUNT = 200; 
 
-    //Twitterlogger Class variables    
+    //Twitterlogger Class variables   
     this.twit = new Twit(config.access_config);
     this.username = username;
   	this.maxId = null; // reset on first data from the api
-  	//this.untilDate = new Date(2013, 01, 01);
-    this.callRate = 5000;
+    this.resetTime = 0;
+    this.tweetsLogged = 0;
 
     //Initialisation variables
     this.maxIdInit = false;
@@ -81,12 +81,14 @@ Twitterlogger.prototype.updateTweets = function () {
       		console.log('TWITTER MODULE ERROR: ' + err);
       		return; 
       	}
+        self.tweetsLogged += reply.length;
       	if (reply.length !== 0){  // Check if the reply is empty, i.e. there are no tweets
       		self.maxId = twitterutils.decStrNum(reply[reply.length-1].id_str); // javascript can't handle large number - use string	
-      	}
-      	self.emit("updated", reply);
+      	  self.emit("updated", reply);
+        } else {
+          self.emit('endOfTweets', self);
+        }
 	});
-
 }
 
 Twitterlogger.prototype.checkRateLimit = function(){
@@ -102,10 +104,7 @@ Twitterlogger.prototype.checkRateLimit = function(){
         left = reply.resources.statuses['/statuses/user_timeline'].remaining;
         reset = reply.resources.statuses['/statuses/user_timeline'].reset;
     	  //resetTime is the time from now to the next rate reset in milliseconds
-        resetTime = moment().diff(moment.unix(reset));
-        self.callRate = Math.abs(resetTime/left);
-        console.log('left :' + left);
-        console.log('resetTime : ' + resetTime);
+        self.resetTime = Math.abs(moment().diff(moment.unix(reset)));
 	  });
 } 
 
@@ -143,6 +142,13 @@ Twitterlogger.prototype.setMaxId = function(){
         self.emit('maxIdInitialised');
     });
   
+}
+
+Twitterlogger.prototype.closeDb = function(){
+  connection.end(function(){
+    util.log('Database connection closed!');
+  });
+  util.log(this.username + ' : Closing the database connection...');
 }
     
 module.exports = Twitterlogger;

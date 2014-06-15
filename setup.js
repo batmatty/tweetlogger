@@ -15,6 +15,12 @@ var db = mysql.createConnection(config.db_config);
 /**
 * Create database.
 */
+console.log('Deleting any existing database...')
+
+db.query('DROP DATABASE tweetget')
+
+console.log('Creating the tweetget database...');
+
 db.query('CREATE DATABASE IF NOT EXISTS tweetget');
 db.query('USE tweetget');
 
@@ -39,5 +45,5 @@ for(i = 0; i < config.usernames.length; i++){
 /**
 * Close client.
 */
-
+console.log("Finished!")
 db.end();
