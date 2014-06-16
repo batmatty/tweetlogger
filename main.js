@@ -7,20 +7,29 @@ var loggers = [];
 
 util.log('Twitterlogger: Running...');
 
+util.log('Creating tweetgetters for : ' +config.usernames);
+
 for (i = 0; i<config.usernames.length; i++){
 	
 	loggers.push(loggerfactory(config, config.usernames[i]));
 
 	if (loggers[i]){
-		loggers[i].on('maxIdInitialised', function(){
-			util.log(this.username + ': maxId Initialised from database!');
+
+		loggers[i].on('initialised', function(){
+			util.log(this.username + ': Initialised from database!');
 			this.maxIdInit = true;
+			this.getTweets();
 		});
 
-		loggers[i].on('updated', function(lastTweets){
+		loggers[i].on('tweetsDownloaded', function(tweets){
 			util.log(this.username +': The MaxId is: ' + this.maxId);
-			util.log(this.username +': Size of the last received tweets : '+ lastTweets.length);
-			this.log(lastTweets);
+			util.log(this.username +': '+tweets.length+' tweets downloaded from twitter.');
+			this.log(tweets);
+		});
+
+		loggers[i].on('tweetslogged', function(result){
+			util.log(this.username + ': '+result.affectedRows+' rows saved to the database. ');
+			this.getTweets();
 		});
 
 		loggers[i].on('endOfTweets', function(logger){
@@ -28,22 +37,25 @@ for (i = 0; i<config.usernames.length; i++){
 			if (index > -1) {
     			loggers.splice(index, 1);
 			}
-			util.log('Logged all tweets for ' + logger.username);
-			util.log('Number of tweets logged for '+logger.username+': '+logger.tweetsLogged);
-			logger.closeDb();
+			util.log(logger.username + ' : '+ logger.tweetsLogged + ' tweets logged in total.');
+			if (loggers.length === 0){
+				util.log('All tweetgetters complete!');
+				this.closeDb();
+			}
 		})
 	}
 
-	timerId = setInterval(function(loggers){
+	/*timerId = setInterval(function(loggers){
 		if (loggers.length === 0){
 			clearInterval(timerId);
 		}
 		for (j = 0; j < loggers.length; j++){
 			if(loggers[j].maxIdInit){
-				loggers[j].updateTweets();
+				loggers[j].getTweets();
 				loggers[j].checkRateLimit();
 			}
 		}
 
 	}, 10000, loggers);
+*/
 }

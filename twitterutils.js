@@ -1,8 +1,10 @@
-/*
+/**
  * Useful functions to use with Twitter
- *
  */
 
+/**
+ * Decrements a number as a string
+ */
 
 var decStrNum = function(n) {
     n = n.toString();
