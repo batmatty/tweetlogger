@@ -27,21 +27,23 @@ var pool = mysql.createPool(config.db_config);
 
 function Twitterlogger (username) { 
 
-    //Constants
-
-    //Change count to change the number of results returned
-    //from the Twitter API.
+    // Number of tweets returned by the api on each call
     this.COUNT = 200; 
 
     //Twitterlogger Class variables   
     this.twit = new Twit(config.access_config);
+    
+    // Username of this tweetlogger
     this.username = username;
-  	this.maxId = null; // reset on first data from the api
+  	
+    // Twitter api parameters
+    this.maxId = null; // reset on first data from the api
+    
+    // UNUSED AT PRESENT!
     this.resetTime = 0;
+    
+    // Counter for the number of tweets that have been logged
     this.tweetsLogged = 0;
-
-    //Initialisation variable to 
-    this.maxIdInit = false;
     
     //Initialise the tweetgetter
     this.init();

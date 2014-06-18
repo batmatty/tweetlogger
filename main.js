@@ -17,7 +17,6 @@ for (i = 0; i<config.usernames.length; i++){
 
 		loggers[i].on('initialised', function(){
 			util.log(this.username + ': Initialised from database!');
-			this.maxIdInit = true;
 			this.getTweets();
 		});
 
@@ -44,18 +43,4 @@ for (i = 0; i<config.usernames.length; i++){
 			}
 		})
 	}
-
-	/*timerId = setInterval(function(loggers){
-		if (loggers.length === 0){
-			clearInterval(timerId);
-		}
-		for (j = 0; j < loggers.length; j++){
-			if(loggers[j].maxIdInit){
-				loggers[j].getTweets();
-				loggers[j].checkRateLimit();
-			}
-		}
-
-	}, 10000, loggers);
-*/
 }
