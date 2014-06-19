@@ -30,6 +30,9 @@ function Twitterlogger (username) {
     // Number of tweets returned by the api on each call
     this.COUNT = 200; 
 
+    // Mode the tweetlogger is running in
+    this.mode = 'init';
+
     //Twitterlogger Class variables   
     this.twit = new Twit(config.access_config);
     
@@ -38,7 +41,8 @@ function Twitterlogger (username) {
   	
     // Twitter api parameters
     this.maxId = null; // reset on first data from the api
-    
+    this.sinceId = null;
+
     // UNUSED AT PRESENT!
     this.resetTime = 0;
     
@@ -65,21 +69,43 @@ Twitterlogger.prototype.init = function(){
     pool.getConnection(function(err, connection){
         if (err) throw err;
         
-        query = 'SELECT tweet_id from ' + self.username + ' ORDER BY tweet_id ASC LIMIT 1';
-        
-        connection.query(query, function(err, result){
-            if (err){
-                console.log('MYSQL ERROR in .init function: ' + err);
-            } else if (result.length !== 0) {
-                self.maxId = twitterutils.decStrNum(result[0].tweet_id);
-            } else {
-                self.maxId = null;
-            }
-            connection.release();
-            self.emit('initialised');
-        });
-    })
+        if (self.mode === 'init'){
+            query = 'SELECT tweet_id from ' + self.username + ' ORDER BY tweet_id ASC LIMIT 1'; // Get tweets in asending order
+            connection.query(query, function(err, result){
+                if (err)  throw err;
+                if (result.length === 0){  // There is nothing in the database and we are in "init" mode
+                    self.maxId = null; // Set maxId to null
+                    self.sinceId = null; // Set sinceId to null
+                } else { // If there are tweets already in the database
+                    self.maxId = twitterutils.decStrNum(result[0].tweet_id); // Set maxId to the oldest tweet in the database
+                    self.sinceId = null; // Set sinceId to null
+                }
+                connection.release();
+                util.log(self.username + ': Tweetlogger initialised in '+self.mode+' mode!');
+                self.emit('initialised');
+            });
+        } else if (self.mode === 'log'){
+            query = 'SELECT tweet_id from ' + self.username + ' ORDER BY tweet_id DESC LIMIT 1'; // Get tweets in descending order
+            connection.query(query, function(err, result){
+                if (err)  throw err;
+                if (result.length === 0){  // There is nothing in the database and we are in log mode
+                    util.log(self.username + ': Database has not been initialised for logging. Please initialise the database for this user!');
+                    process.exit();
+                } else { // If there are tweets already in the database
+                    self.sinceId = result[0].tweet_id; // Set sinceId to the latest tweet_id in the database
+                    self.maxId = null; // Set maxId to null
+                }
+                connection.release();
+                util.log(self.username + ': Tweetlogger initialised in '+self.mode+' mode!');
+                self.emit('initialised');
+            });
+        } else {
+            util.log(self.mode + ' is not a recognised mode. Please use a recognised mode: init or log');
+            process.exit();
+        }    
+    });
 }
+
 
 /**
  *  Downloads tweets from the twitter api
@@ -87,22 +113,22 @@ Twitterlogger.prototype.init = function(){
 
 Twitterlogger.prototype.getTweets = function () {
 	var self = this;
-	var params = {};
-
-	if(this.maxId === null){
-    params = {
-			'screen_name' : self.username, 
-			'trim_user' : false,
-			'count' : self.COUNT
-		};
-	} else {
-		params = {
-			'screen_name' : self.username,
-			'max_id' : self.maxId,
-			'trim_user' : false,
-			'count' : self.COUNT
-		};
-	}
+	var  params = {
+          'screen_name' : self.username, 
+          'trim_user' : false,
+          'count' : self.COUNT
+        };
+  if (self.mode === 'init'){
+      if (self.maxId !== null){
+          params.max_id = self.maxId;
+      }
+  }      
+	if (self.mode === 'log'){
+      params.since_id = self.sinceId;
+      if (self.maxId !== null){
+          params.max_id = self.maxId;
+      }
+  }
  	this.twit.get('statuses/user_timeline', params, function(err, reply) {
       	if(err) { 
       		console.log('TWITTER MODULE ERROR: ' + err);
@@ -111,9 +137,12 @@ Twitterlogger.prototype.getTweets = function () {
         self.tweetsLogged += reply.length;
       	if (reply.length !== 0){  // Check if the reply is empty, i.e. there are no tweets
       		self.maxId = twitterutils.decStrNum(reply[reply.length-1].id_str); // javascript can't handle large number - use string	
-      	  self.emit("tweetsDownloaded", reply);
+      	  util.log(self.username +': The MaxId is: ' + self.maxId);
+          util.log(self.username +': '+reply.length+' tweets downloaded from twitter.');
+          self.emit("tweetsDownloaded", reply);
         } else {
           util.log(self.username + ': No more tweets to download.');
+          util.log(self.username + ' : '+ self.tweetsLogged + ' tweets logged in total.');
           self.emit('endOfTweets', self);
         }
 	});
@@ -145,6 +174,7 @@ Twitterlogger.prototype.log = function(tweets){
                     console.log('MYSQL ERROR in .log: ' + err);  
                 }
                 connection.release();
+                util.log(self.username + ': '+result.affectedRows+' rows saved to the database. ');
                 self.emit('tweetslogged', result)
             });
         });
@@ -162,7 +192,7 @@ Twitterlogger.prototype.closeDb = function(){
 }
 
 /**
- *  Donwloads the rate limit stats from the twitter api
+ *  Downloads the rate limit stats from the twitter api
  */
 
 Twitterlogger.prototype.checkRateLimit = function(){
