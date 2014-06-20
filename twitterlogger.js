@@ -218,6 +218,7 @@ Twitterlogger.prototype.checkRateLimit = function(){
         reset = reply.resources.statuses['/statuses/user_timeline'].reset;
     	  //resetTime is the time from now to the next rate reset in milliseconds
         self.resetTime = Math.abs(moment().diff(moment.unix(reset)));
+        util.log("API CALLS REMAING : " +left);
 	  });
 } 
 

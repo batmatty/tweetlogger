@@ -21,6 +21,7 @@ for (i = 0; i<config.usernames.length; i++){
 
 		loggers[i].on('tweetsDownloaded', function(tweets){
 			this.log(tweets);
+			this.checkRateLimit();
 		});
 
 		loggers[i].on('tweetslogged', function(result){
