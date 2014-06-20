@@ -46,8 +46,9 @@ function Twitterlogger (username) {
     // UNUSED AT PRESENT!
     this.resetTime = 0;
     
-    // Counter for the number of tweets that have been logged
+    // Counter for the number of tweets that have been logged and the number of apicalls
     this.tweetsLogged = 0;
+    this.apiCalls = 0;
     
     //Initialise the tweetgetter
     this.init();
@@ -130,7 +131,8 @@ Twitterlogger.prototype.getTweets = function () {
       }
   }
  	this.twit.get('statuses/user_timeline', params, function(err, reply) {
-      	if(err) { 
+      	self.apiCalls++;
+        if(err) { 
       		console.log('TWITTER MODULE ERROR: ' + err);
       		return; 
       	}
@@ -143,6 +145,7 @@ Twitterlogger.prototype.getTweets = function () {
         } else {
           util.log(self.username + ': No more tweets to download.');
           util.log(self.username + ' : '+ self.tweetsLogged + ' tweets logged in total.');
+          util.log(self.username + ' : Total API Calls : ' + self.apiCalls);
           self.emit('endOfTweets', self);
         }
 	});
