@@ -28,7 +28,7 @@ var pool = mysql.createPool(config.db_config);
 function Twitterlogger (username) { 
 
     // Number of tweets returned by the api on each call
-    this.COUNT = 200; 
+    this.COUNT = 100; 
 
     // Mode the tweetlogger is running in
     this.mode = 'init';
@@ -161,17 +161,23 @@ Twitterlogger.prototype.log = function(tweets){
             var fdate = moment.utc(tweets[i].created_at, 'ddd MMM DD HH:mm:ss Z YYYY');
             tempArr.push(tweets[i].id_str);
             tempArr.push(tweets[i].user.screen_name);
-            tempArr.push(fdate.format());
+            tempArr.push(fdate.format("YYYY-MM-DD HH:mm:ss")); // Check that the dates correspond!! 
             tempArr.push(tweets[i].text);
             values.push(tempArr);
         } 
         pool.getConnection(function(err, connection){
             if (err) throw err;
-        
+            
             var sql = "INSERT INTO "+self.username+" (tweet_id, username, date, tweet) VALUES ?";
+            
             connection.query(sql, [values], function(err, result) {
                 if (err){
                     console.log('MYSQL ERROR in .log: ' + err);  
+                }
+                if (result.warningCount > 0){
+                    connection.query("SHOW WARNINGS;", function(err, result2){
+                        console.log(result2);
+                    })
                 }
                 connection.release();
                 util.log(self.username + ': '+result.affectedRows+' rows saved to the database. ');

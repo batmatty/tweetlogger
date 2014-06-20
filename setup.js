@@ -21,7 +21,9 @@ db.query('DROP DATABASE tweetget')
 
 console.log('Creating the tweetget database...');
 
-db.query('CREATE DATABASE IF NOT EXISTS tweetget');
+db.query('CREATE DATABASE IF NOT EXISTS tweetget CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+db.query('SHOW WARNINGS')
+
 db.query('USE tweetget');
 
 
@@ -37,7 +39,7 @@ for(i = 0; i < config.usernames.length; i++){
 			'tweet_id BIGINT NOT NULL,' +
 			'username VARCHAR(100) NULL,' +
 			'date DATETIME NULL,' +
-			'tweet VARCHAR(140) NULL,' +
+			'tweet VARCHAR(200) NULL,' +
 			'hashtags VARCHAR(100) NULL,' +
 			'PRIMARY KEY (tweet_id))');
 }

@@ -21,6 +21,7 @@ var config = {
         database : '',
         supportBigNumbers : true,
         bigNumberStrings : true,
+        charset: 'utf8mb4'
     },
 	access_config : {
        consumer_key : '',
